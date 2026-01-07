@@ -1,0 +1,154 @@
+package main
+
+import "fmt"
+
+func main() {
+	obj := Constructor(3)
+	obj.Put(1, 1)
+	obj.PrintNodeList()
+	obj.Put(2, 2)
+	obj.PrintNodeList()
+	obj.Put(3, 3)
+	obj.PrintNodeList()
+	obj.Put(4, 4)
+	obj.PrintNodeList()
+
+	fmt.Println()
+	fmt.Println("Now getting 3")
+	obj.Get(3)
+	obj.PrintNodeList()
+
+	fmt.Println()
+	fmt.Println("Now inserting 4")
+	obj.Put(4, 4)
+	obj.PrintNodeList()
+
+	// fmt.Println()
+	// fmt.Println(obj.hashMap)
+	// param_1 := obj.Get(key)
+	// obj.Put(key, value)
+}
+
+type LRUCache struct {
+	capacity        int
+	currentCapacity int
+	startNode       *Node
+	endNode         *Node
+	hashMap         map[int]*Node
+}
+
+func (this *LRUCache) PrintNodeList() {
+	if this.startNode != nil {
+		node := this.startNode
+		fmt.Print(node)
+		for node.next != nil {
+			node = node.next
+			fmt.Print("", node)
+		}
+	}
+	fmt.Println()
+}
+
+type Node struct {
+	next  *Node
+	last  *Node
+	key   int
+	value int
+}
+
+func Constructor(capacity int) LRUCache {
+	return LRUCache{
+		capacity:        capacity,
+		currentCapacity: 0,
+		startNode:       nil,
+		endNode:         nil,
+		hashMap:         make(map[int]*Node),
+	}
+}
+
+func (this *LRUCache) Get(key int) int {
+	node, doesExist := this.hashMap[key]
+	if doesExist {
+		// node is first node
+		if node.last == nil {
+			return node.value
+		}
+
+		// node is last node
+		if node.next == nil {
+			node.last.next = nil
+			this.endNode = node.last
+		}
+
+		// node is middle node
+		node.last.next = node.next
+
+		node.last = nil
+		node.next = this.startNode
+		this.startNode = node
+		return node.value
+	}
+	return -1
+}
+
+func (this *LRUCache) Put(key int, value int) {
+	fmt.Println()
+	fmt.Println("--- Inside put function ---")
+	node, doesExist := this.hashMap[key]
+	fmt.Println("Results for:", node, doesExist)
+	if doesExist {
+		// node is first node
+		if node.last == nil {
+			fmt.Println("It is the fucking first node")
+			node.value = value
+			return
+		}
+
+		// node is last node
+		if node.next == nil {
+			fmt.Println("It is the flippin last node")
+			node.last.next = nil
+			this.endNode = node.last
+		}
+
+		// node is middle node
+		fmt.Println("Or is it?")
+		node.last.next = node.next
+
+		node.last = nil
+		node.next = this.startNode
+		this.startNode = node
+	} else {
+		fmt.Printf("Inserting node[%d,%d]\n", key, value)
+		var newNode *Node = &Node{key: key, value: value}
+
+		if this.currentCapacity != 0 {
+			this.startNode.last = newNode
+		}
+
+		newNode.next = this.startNode
+		this.startNode = newNode
+
+		if this.currentCapacity == 0 {
+			this.endNode = newNode
+		}
+
+		this.hashMap[key] = newNode
+
+		if this.currentCapacity == this.capacity {
+			lastNode := this.endNode
+			this.endNode.last.next = nil
+			this.endNode = this.endNode.last
+			delete(this.hashMap, lastNode.key)
+		} else {
+			this.currentCapacity += 1
+		}
+	}
+}
+
+/**
+ * Your LRUCache object will be instantiated and called as such:
+ * obj := Constructor(capacity);
+ * param_1 := obj.Get(key);
+ * obj.Put(key,value);
+ */
